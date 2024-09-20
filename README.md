@@ -1,6 +1,6 @@
-# LLuMinator
+# LLuMinate
 
-LLuMinator is a Neovim plugin that enriches the context of copied code by providing additional information about symbols, such as their definitions and hover information from LSP. This plugin is particularly useful for developers who want to quickly understand and share code snippets with more context to pass it to LLM Chat for example. 
+LLuMinate is a Neovim plugin that enriches the context of copied code by providing additional information about symbols, such as their definitions and hover information from LSP. This plugin is particularly useful for developers who want to quickly understand and share code snippets with more context to pass it to LLM Chat for example. 
 
 ## Features
 
@@ -20,9 +20,9 @@ Add the following line to your Neovim configuration:
 
 ```lua
 use {
-  'k2589/LLuMinator.nvim',
+  'k2589/LLuMinate.nvim',
   config = function()
-    require('lluminator').setup()
+    require('lluminate').setup()
   end
 }
 ```
@@ -33,11 +33,11 @@ Add the following to your Neovim configuration:
 
 ```lua
 {
-  'k2589/LLuMinator.nvim',
+  'k2589/LLuMinate.nvim',
   config = function()
-    require('lluminator').setup()
+    require('lluminate').setup()
   end
-}
+},
 ```
 
 ## Configuration
@@ -45,7 +45,7 @@ Add the following to your Neovim configuration:
 LLuMinator comes with default settings, but you can customize its behavior. Here's an example of how to configure the plugin:
 
 ```lua
-require('lluminator').setup({
+require('lluminate').setup({
   include_definition = false,  -- Include symbol definitions in the enriched context
   include_hover = true,       -- Include hover information in the enriched context
 })
