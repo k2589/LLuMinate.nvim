@@ -64,12 +64,10 @@ local function find_definition(bufnr, line, character, symbol)
                     result = result .. "Unable to read definition file for " .. symbol .. "\n"
                 end
             else
-                --result = result .. "Incomplete definition information for " .. symbol .. "\n"
                 result = result
             end
         else
                 result = result
-            --result = result .. "No definition found for " .. symbol .. "\n"
         end
     end
 
@@ -109,7 +107,6 @@ local function find_definition(bufnr, line, character, symbol)
     return result ~= "" and result or nil
 end
 
--- Function to get hover information for a symbol
 local function get_hover_info(bufnr, line, character, symbol)
     local client = get_lsp_client()
     if not client then
@@ -180,7 +177,7 @@ local function get_diagnostics(bufnr, start_row, end_row)
     for _, diagnostic in ipairs(diagnostics) do
         local severity_name = severity_lookup[diagnostic.severity] or "Unknown"
         print("Debug: Diagnostic -", "Line:", diagnostic.lnum, "Severity:", diagnostic.severity, "(" .. severity_name .. ")", "Message:", diagnostic.message)
-        
+
         local include_diagnostic = false
         if M.options.diagnostic_scope == "file" then
             include_diagnostic = true
@@ -202,7 +199,6 @@ local function get_diagnostics(bufnr, start_row, end_row)
     return filtered_diagnostics
 end
 
--- Modified format_diagnostics function
 local function format_diagnostics(diagnostics)
     local result = "Diagnostics:\n"
     local severity_lookup = {
@@ -218,7 +214,6 @@ local function format_diagnostics(diagnostics)
     return result
 end
 
--- Modified enrich_context_internal function
 local function enrich_context_internal(start_row, start_col, end_row, end_col)
     local bufnr = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(bufnr, start_row, end_row + 1, false)
