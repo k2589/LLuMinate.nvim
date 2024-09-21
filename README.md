@@ -92,7 +92,7 @@ Once installed and configured, LLuMinator will automatically enrich the context 
 
 #### Enriched context:
 
-	someVar = somepackage.SomeFunc(someStructVar.A, someStructVar.B)
+	someVar := somepackage.SomeFunc(someStructVar.A, someStructVar.B)
 	if someVar != nil {
 		log.Panic(someVar)
 	}
