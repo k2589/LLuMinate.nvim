@@ -3,7 +3,15 @@ local M = {}
 
 M.options = {
     include_definition = false,
-    include_hover = true
+    include_hover = true,
+    include_diagnostics = true,
+    diagnostic_levels = {
+        "Error",
+        "Warning",
+        "Information",
+        "Hint"
+    },
+    diagnostic_scope = "selection" -- Can be "selection" (full selection), "line" (first line of selection), or "file" (full file)
 }
 
 -- Function to get LSP client
@@ -56,12 +64,10 @@ local function find_definition(bufnr, line, character, symbol)
                     result = result .. "Unable to read definition file for " .. symbol .. "\n"
                 end
             else
-                --result = result .. "Incomplete definition information for " .. symbol .. "\n"
                 result = result
             end
         else
                 result = result
-            --result = result .. "No definition found for " .. symbol .. "\n"
         end
     end
 
@@ -101,7 +107,6 @@ local function find_definition(bufnr, line, character, symbol)
     return result ~= "" and result or nil
 end
 
--- Function to get hover information for a symbol
 local function get_hover_info(bufnr, line, character, symbol)
     local client = get_lsp_client()
     if not client then
@@ -129,7 +134,6 @@ local function get_hover_info(bufnr, line, character, symbol)
     return nil
 end
 
-
 local function get_visual_selection()
     local start_pos = vim.fn.getpos("'<")
     local end_pos = vim.fn.getpos("'>")
@@ -155,7 +159,61 @@ local function get_visual_selection()
     return table.concat(lines, "\n"), start_row, start_col, end_row, end_col
 end
 
--- Function to enrich the context of copied code
+local function get_diagnostics(bufnr, start_row, end_row)
+    local diagnostics = vim.diagnostic.get(bufnr)
+    local filtered_diagnostics = {}
+
+    print("Debug: Total diagnostics found:", #diagnostics)
+    print("Debug: Start row:", start_row, "End row:", end_row)
+    print("Debug: Diagnostic scope:", M.options.diagnostic_scope)
+
+    local severity_lookup = {
+        [vim.diagnostic.severity.ERROR] = "Error",
+        [vim.diagnostic.severity.WARN] = "Warning",
+        [vim.diagnostic.severity.INFO] = "Information",
+        [vim.diagnostic.severity.HINT] = "Hint"
+    }
+
+    for _, diagnostic in ipairs(diagnostics) do
+        local severity_name = severity_lookup[diagnostic.severity] or "Unknown"
+        print("Debug: Diagnostic -", "Line:", diagnostic.lnum, "Severity:", diagnostic.severity, "(" .. severity_name .. ")", "Message:", diagnostic.message)
+
+        local include_diagnostic = false
+        if M.options.diagnostic_scope == "file" then
+            include_diagnostic = true
+        elseif M.options.diagnostic_scope == "line" then
+            include_diagnostic = (diagnostic.lnum == start_row)
+        else -- "selection" (default)
+            include_diagnostic = (diagnostic.lnum >= start_row and diagnostic.lnum <= end_row)
+        end
+
+        if include_diagnostic and vim.tbl_contains(M.options.diagnostic_levels, severity_name) then
+            table.insert(filtered_diagnostics, diagnostic)
+            print("Debug: Diagnostic added to filtered list")
+        else
+            print("Debug: Diagnostic not included due to scope or severity level")
+        end
+    end
+
+    print("Debug: Filtered diagnostics count:", #filtered_diagnostics)
+    return filtered_diagnostics
+end
+
+local function format_diagnostics(diagnostics)
+    local result = "Diagnostics:\n"
+    local severity_lookup = {
+        [vim.diagnostic.severity.ERROR] = "Error",
+        [vim.diagnostic.severity.WARN] = "Warning",
+        [vim.diagnostic.severity.INFO] = "Information",
+        [vim.diagnostic.severity.HINT] = "Hint"
+    }
+    for _, diagnostic in ipairs(diagnostics) do
+        local severity = severity_lookup[diagnostic.severity] or "Unknown"
+        result = result .. string.format("[%s] Line %d: %s\n", severity, diagnostic.lnum + 1, diagnostic.message)
+    end
+    return result
+end
+
 local function enrich_context_internal(start_row, start_col, end_row, end_col)
     local bufnr = vim.api.nvim_get_current_buf()
     local lines = vim.api.nvim_buf_get_lines(bufnr, start_row, end_row + 1, false)
@@ -187,6 +245,20 @@ local function enrich_context_internal(start_row, start_col, end_row, end_col)
         end
     end
 
+    -- Add diagnostics if enabled
+    if M.options.include_diagnostics then
+        print("Debug: Fetching diagnostics...")
+        local diagnostics = get_diagnostics(bufnr, start_row, end_row)
+        print("Debug: Diagnostics retrieved:", #diagnostics)
+        if #diagnostics > 0 then
+            enriched_context = enriched_context .. "\n" .. format_diagnostics(diagnostics)
+        else
+            print("Debug: No diagnostics found in the selected range")
+        end
+    else
+        print("Debug: Diagnostics are not enabled in options")
+    end
+
     -- Copy the enriched context to the clipboard
     vim.fn.setreg('+', enriched_context)
     print("Enriched context copied to clipboard!")
@@ -211,6 +283,12 @@ end
 -- Set up the plugin
 function M.setup(opts)
     M.options = vim.tbl_deep_extend("force", M.options, opts or {})
+
+    -- Validate diagnostic_scope option
+    if M.options.diagnostic_scope and not vim.tbl_contains({"selection", "line", "file"}, M.options.diagnostic_scope) then
+        print("Warning: Invalid diagnostic_scope option. Defaulting to 'selection'.")
+        M.options.diagnostic_scope = "selection"
+    end
 
     vim.api.nvim_create_user_command("EnrichContext", function(opts)
         M.enrich_context()
