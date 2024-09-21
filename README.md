@@ -48,6 +48,14 @@ LLuMinator comes with default settings, but you can customize its behavior. Here
 require('lluminate').setup({
   include_definition = false,  -- Include symbol definitions in the enriched context
   include_hover = true,       -- Include hover information in the enriched context
+  include_diagnostics = true,
+  diagnostic_levels = {
+        "Error",
+        "Warning",
+        "Information",
+        "Hint"
+    },
+  diagnostic_scope = "selection" -- Can be "selection" (full selection), "line" (first line of selection), or "file" (full file)
 })
 ```
 
@@ -84,7 +92,7 @@ Once installed and configured, LLuMinator will automatically enrich the context 
 
 #### Enriched context:
 
-	someVar := somepackage.SomeFunc(someStructVar.A, someStructVar.B)
+	someVar = somepackage.SomeFunc(someStructVar.A, someStructVar.B)
 	if someVar != nil {
 		log.Panic(someVar)
 	}
